@@ -17,16 +17,16 @@
 </head>
 <body class="flex flex-col items-center p-6 text-center">
 
-    <div id="lobby" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1f1022] p-6">
+    <div id="lobby" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1f1022] p-6 text-center">
         <h1 class="text-5xl font-black mb-6 italic italic">MTV <span class="text-[#cd2bee]">TRIVIA</span></h1>
         <input type="text" id="username" class="bg-white/10 border-2 border-[#cd2bee]/30 rounded-2xl p-4 text-center text-xl mb-6 outline-none w-full max-w-xs" placeholder="הכנס שם...">
-        <button onclick="initGame()" class="bg-[#cd2bee] px-16 py-5 rounded-full text-2xl font-black shadow-lg active:scale-95 transition-all">התחל משחק ⚡</button>
-        <p class="mt-4 text-white/40 text-sm">הלחיצה תפעיל את הסאונד</p>
+        <button id="start-btn" class="bg-[#cd2bee] px-16 py-5 rounded-full text-2xl font-black shadow-lg active:scale-95 transition-all">התחל משחק ⚡</button>
+        <p class="mt-4 text-white/40 text-sm">הקש להתחלה וסאונד</p>
     </div>
 
     <div id="game-ui" class="hidden flex flex-col items-center w-full max-w-md h-full pt-4">
         <div class="flex justify-between w-full mb-6">
-            <span id="q-count" class="bg-[#cd2bee]/20 px-3 py-1 rounded-full text-sm font-bold border border-[#cd2bee]/30">שאלה 1</span>
+            <span id="q-count" class="bg-[#cd2bee]/20 px-3 py-1 rounded-full text-sm font-bold border border-[#cd2bee]/30 text-white">שאלה 1</span>
             <span id="score" class="text-[#00f3ff] text-2xl font-black">0</span>
         </div>
 
@@ -38,12 +38,11 @@
         <h2 class="text-2xl font-bold mb-1">באיזו שנה יצא השיר?</h2>
         <p id="song-display" class="text-[#00f3ff] italic mb-6">טוען...</p>
 
-        <div class="relative mb-10" onclick="forcePlay()">
-            <div class="size-44 rounded-full bg-black border-4 border-[#cd2bee] vinyl-glow animate-spin-slow flex items-center justify-center relative">
+        <div class="relative mb-10" id="vinyl-btn">
+            <div class="size-44 rounded-full bg-black border-4 border-[#cd2bee] vinyl-glow animate-spin-slow flex items-center justify-center">
                 <div class="size-14 rounded-full bg-[#cd2bee] border-4 border-black/50"></div>
-                <div class="absolute top-0 right-0 w-2 h-16 bg-white/20 origin-top rotate-45 rounded-full"></div>
             </div>
-            <p class="text-[10px] mt-4 opacity-50 italic">אם לא שומעים - לחץ על התקליט</p>
+            <p class="text-[10px] mt-4 opacity-50 italic text-[#cd2bee]">נגיעה בתקליט למקרה שאין סאונד</p>
         </div>
 
         <div id="options" class="grid grid-cols-2 gap-3 w-full"></div>
@@ -64,44 +63,29 @@
         const audio = document.getElementById('audio');
         let myName = "", timer, currentIdx = 0;
 
+        // רשימת שירים עם לינקים ישירים יותר
         const playlist = [
-            { name: "Michael Jackson - Thriller", year: 1982, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-            { name: "Queen - Bohemian Rhapsody", year: 1975, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-            { name: "Britney Spears - Toxic", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-            { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-            { name: "Nirvana - Smells Like Teen Spirit", year: 1991, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" }
+            { name: "Michael Jackson - Thriller", year: 1982, url: "https://actions.google.com/sounds/v1/science_fiction/hyperspace_activation.ogg" }, // שיר בדיקה קצר ומהיר
+            { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+            { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
         ];
 
-        // פונקציית הקסם לסאונד בטלפון
-        function initGame() {
+        document.getElementById('start-btn').addEventListener('click', () => {
             myName = document.getElementById('username').value;
             if(!myName) return alert("הכנס שם!");
             
-            // "הצתה" של הנגן - משמיע שקט לרבע שנייה כדי לשחרר את החסימה של הדפדפן
-            audio.src = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAA== ";
-            audio.play().then(() => {
-                document.getElementById('lobby').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'flex';
-                db.ref('players/' + myName).set({ score: 0 });
-                syncGame();
-            }).catch(e => {
-                // אם עדיין חסום, פשוט נכנס למשחק ומחכה ללחיצה על התקליט
-                document.getElementById('lobby').style.display = 'none';
-                document.getElementById('game-ui').style.display = 'flex';
-                syncGame();
-            });
-        }
-
-        function syncGame() {
+            // "הצתת" הסאונד על ידי המשתמש
+            audio.play().catch(() => {}); 
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            
+            db.ref('players/' + myName).set({ score: 0 });
             db.ref('currentQ').on('value', snap => {
                 currentIdx = snap.val() || 0;
-                if(currentIdx >= playlist.length) {
-                    db.ref('currentQ').set(0); // איפוס אוטומטי בסוף
-                } else {
-                    loadQ(currentIdx);
-                }
+                if(currentIdx < playlist.length) loadQ(currentIdx);
+                else db.ref('currentQ').set(0);
             });
-        }
+        });
 
         function loadQ(idx) {
             const q = playlist[idx];
@@ -112,7 +96,7 @@
             
             audio.src = q.url;
             audio.load();
-            forcePlay();
+            audio.play().catch(e => console.log("Sound waiting..."));
 
             let t = 15;
             clearInterval(timer);
@@ -123,7 +107,7 @@
                 if(t <= 0) { clearInterval(timer); db.ref('currentQ').set(idx + 1); }
             }, 1000);
 
-            [q.year, q.year-5, q.year+2, q.year+10].sort(() => Math.random() - 0.5).forEach(y => {
+            [q.year, q.year-4, q.year+2, q.year+5].sort(() => Math.random() - 0.5).forEach(y => {
                 const b = document.createElement('button');
                 b.className = "py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xl active:scale-95";
                 b.innerText = y;
@@ -140,11 +124,7 @@
             });
         }
 
-        function forcePlay() {
-            audio.play().catch(e => {
-                console.log("Waiting for user interaction");
-            });
-        }
+        document.getElementById('vinyl-btn').onclick = () => audio.play();
     </script>
 </body>
 </html>
