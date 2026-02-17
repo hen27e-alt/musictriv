@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="he">
+<head>
+    <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MTV Trivia - Daily Rewards</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background: #0a0a0a; color: white; overflow: hidden; height: 100dvh; }
+        .neon-glow { text-shadow: 0 0 10px #ee2b6c, 0 0 20px #ee2b6c; }
+        .cyan-glow { box-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
+        .synthwave-bg { background: linear-gradient(180deg, #1a0b2e 0%, #0a0a0a 100%); }
+        .grid-floor { background-image: linear-gradient(rgba(238, 43, 108, 0.2) 1px, transparent 1px), linear-gradient(90deg, rgba(238, 43, 108, 0.2) 1px, transparent 1px); background-size: 40px 40px; transform: perspective(500px) rotateX(60deg); position: absolute; bottom: -50px; left: -50%; right: -50%; height: 400px; z-index: 0; }
+        .claimed { opacity: 0.5; filter: grayscale(1); pointer-events: none; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between">
+    <div class="fixed inset-0 z-0 synthwave-bg overflow-hidden pointer-events-none">
+        <div class="absolute top-20 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-gradient-to-t from-[#ee2b6c] to-orange-400 opacity-30 blur-3xl"></div>
+        <div class="grid-floor"></div>
+    </div>
+
+    <header class="relative z-10 w-full flex items-center justify-between p-6">
+        <button onclick="window.location.href='index.html'" class="bg-white/10 p-2 rounded-full backdrop-blur-md border border-white/20">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+        <div class="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-[#ee2b6c]/30">
+            <span id="header-coins" class="text-[#ee2b6c] font-black">0</span>
+            <span class="material-symbols-outlined text-[#ee2b6c] text-sm">monetization_on</span>
+        </div>
+    </header>
+
+    <main class="relative z-10 w-full flex-1 flex flex-col items-center justify-center px-4 max-w-md mx-auto">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-black neon-glow italic mb-2">פרס יומי</h1>
+            <p class="text-[#ee2b6c]/80 font-bold">MTV TRIVIA STREAK</p>
+        </div>
+
+        <div id="rewards-container" class="w-full grid grid-cols-4 gap-3 mb-4">
+            </div>
+        <div id="rewards-row-2" class="w-full grid grid-cols-3 gap-3">
+            </div>
+
+        <div class="w-full mt-12 flex flex-col items-center gap-4">
+            <button id="claim-btn" onclick="claimReward()" class="w-full bg-[#ee2b6c] text-white font-black text-2xl py-5 rounded-xl shadow-xl active:scale-95 transition-all border-b-4 border-pink-900">
+                אוסף!
+            </button>
+            <p id="cooldown-txt" class="text-white/40 text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm">schedule</span>
+                בודק זכאות...
+            </p>
+        </div>
+    </main>
+
+    <script>
+        const firebaseConfig = { databaseURL: "https://music-trivia-90e88-default-rtdb.europe-west1.firebasedatabase.app/" };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const myName = localStorage.getItem('trivia_username') || "חן";
+
+        const rewardValues = [10, 20, 50, 70, 100, 150, 500]; // יום 7 זה פרס על!
+        let currentStreak = 0;
+        let lastClaimed = 0;
+
+        db.ref('players/' + myName).on('value', snap => {
+            const data = snap.val() || {};
+            document.getElementById('header-coins').innerText = (data.coins || 0).toLocaleString();
+            currentStreak = data.streak || 0;
+            lastClaimed = data.lastClaimed || 0;
+            renderRewards();
+            checkEligibility();
+        });
+
+        function renderRewards() {
+            const row1 = document.getElementById('rewards-container');
+            const row2 = document.getElementById('rewards-row-2');
+            row1.innerHTML = ""; row2.innerHTML = "";
+
+            rewardValues.forEach((val, i) => {
+                const dayNum = i + 1;
+                const isCurrent = dayNum === (currentStreak % 7) + 1;
+                const isClaimed = dayNum <= (currentStreak % 7);
+                
+                const card = `
+                    <div class="bg-card-bg/80 border ${isCurrent ? 'border-[#00f3ff] cyan-glow' : 'border-white/10'} rounded-xl p-3 flex flex-col items-center justify-between aspect-square backdrop-blur-sm ${isClaimed ? 'claimed' : ''}">
+                        <span class="text-[10px] ${isCurrent ? 'text-[#00f3ff] font-bold' : 'text-white/50'}">יום ${dayNum}</span>
+                        <span class="material-symbols-outlined ${dayNum === 7 ? 'text-yellow-400' : 'text-[#00f3ff]'} text-2xl">${dayNum === 7 ? 'card_giftcard' : 'monetization_on'}</span>
+                        <span class="text-xs font-black">+${val}</span>
+                    </div>
+                `;
+                if(dayNum <= 4) row1.innerHTML += card;
+                else row2.innerHTML += card;
+            });
+        }
+
+        function checkEligibility() {
+            const now = Date.now();
+            const hoursPassed = (now - lastClaimed) / (1000 * 60 * 60);
+            const btn = document.getElementById('claim-btn');
+            
+            if (hoursPassed >= 24) {
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                document.getElementById('cooldown-txt').innerText = "הפרס שלך מחכה!";
+            } else {
+                btn.disabled = true;
+                btn.style.opacity = "0.3";
+                const timeLeft = 24 - hoursPassed;
+                document.getElementById('cooldown-txt').innerText = `הפרס הבא בעוד ${Math.floor(timeLeft)} שעות`;
+            }
+        }
+
+        function claimReward() {
+            const now = Date.now();
+            const reward = rewardValues[currentStreak % 7];
+            
+            db.ref('players/' + myName).transaction(data => {
+                if (data) {
+                    data.coins = (data.coins || 0) + reward;
+                    data.streak = (data.streak || 0) + 1;
+                    data.lastClaimed = now;
+                }
+                return data;
+            });
+            alert(`מעולה! אספת ${reward} מטבעות.`);
+        }
+    </script>
+</body>
+</html>
