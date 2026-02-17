@@ -3,81 +3,65 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>MTV Trivia LIVE - חן אלרואי</title>
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <title>MTV Trivia LIVE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #1f1022; min-height: 100dvh; }
-        .glass-effect { background: rgba(45, 27, 50, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(205, 43, 238, 0.2); }
-        .vinyl-glow { box-shadow: 0 0 25px rgba(205, 43, 238, 0.4); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #1f1022; color: white; overflow: hidden; height: 100dvh; }
+        .vinyl-glow { box-shadow: 0 0 30px rgba(205, 43, 238, 0.5); }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin 8s linear infinite; }
-        .correct-ans { background: #00ff88 !important; color: black !important; border-color: #00ff88 !important; box-shadow: 0 0 20px #00ff88; }
-        .wrong-ans { background: #ff0055 !important; border-color: #ff0055 !important; }
-        .hidden { display: none !important; }
+        .animate-spin-slow { animation: spin 6s linear infinite; }
+        .correct { background: #00ff88 !important; color: black !important; border-color: #00ff88 !important; }
+        .wrong { background: #ff0055 !important; border-color: #ff0055 !important; }
     </style>
 </head>
-<body class="text-white flex flex-col overflow-hidden">
+<body class="flex flex-col items-center">
 
-    <div id="lobby" class="fixed inset-0 z-[100] flex flex-col items-center justify-center p-6 bg-[#1f1022]">
+    <div id="lobby" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1f1022] p-6">
         <h1 class="text-4xl font-black mb-8 italic">MTV <span class="text-[#cd2bee]">TRIVIA</span></h1>
-        <input type="text" id="username" class="w-full max-w-xs bg-white/10 border-2 border-[#cd2bee]/30 rounded-2xl p-4 text-center text-xl mb-6 outline-none focus:border-[#00f3ff]" placeholder="הכנס שם...">
-        <button onclick="startGame()" class="w-full max-w-xs bg-[#cd2bee] py-5 rounded-full text-2xl font-black shadow-lg">הצטרף לקרב ⚡</button>
+        <input type="text" id="username" class="w-full max-w-xs bg-white/10 border-2 border-[#cd2bee]/30 rounded-2xl p-4 text-center text-xl mb-6 outline-none" placeholder="הכנס שם...">
+        <button onclick="startGame()" class="w-full max-w-xs bg-[#cd2bee] py-5 rounded-full text-2xl font-black shadow-lg active:scale-95 transition-all">הצטרף למשחק ⚡</button>
     </div>
 
-    <div id="game-ui" class="hidden flex flex-col h-screen">
-        <header class="w-full px-6 pt-8 pb-4">
-            <div class="flex items-center justify-between mb-4">
-                <div class="bg-[#cd2bee]/20 px-3 py-1 rounded-full border border-[#cd2bee]/30">
-                    <span id="q-count" class="text-white text-sm font-bold">שאלה 1/10</span>
-                </div>
-                <div class="text-center">
-                    <span id="player-display" class="text-[#cd2bee] text-xs font-bold block uppercase"></span>
-                    <span id="score-val" class="text-[#00f3ff] text-2xl font-black">0</span>
-                </div>
-                <button class="size-10 flex items-center justify-center rounded-full bg-white/10" onclick="toggleMute()">
-                    <span id="vol-icon" class="material-symbols-outlined">volume_up</span>
-                </button>
+    <div id="game-ui" class="hidden flex flex-col items-center w-full max-w-md h-full p-6">
+        <header class="w-full flex justify-between items-center mb-6">
+            <div class="bg-[#cd2bee]/20 px-4 py-1 rounded-full border border-[#cd2bee]/30 text-sm font-bold" id="q-count">שאלה 1/10</div>
+            <div class="text-center">
+                <div id="p-name" class="text-[#cd2bee] text-xs font-bold uppercase"></div>
+                <div id="score" class="text-[#00f3ff] text-2xl font-extrabold">0</div>
             </div>
-            <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                <div id="prog-bar" class="h-full bg-[#cd2bee] w-0 transition-all duration-500 shadow-[0_0_10px_#cd2bee]"></div>
-            </div>
+            <span class="material-symbols-outlined text-white/50">volume_up</span>
         </header>
 
-        <main class="flex-1 flex flex-col items-center justify-between px-6 py-4">
-            <div class="relative size-20 flex items-center justify-center">
-                <svg class="absolute inset-0 size-full -rotate-90">
-                    <circle class="text-white/10" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-width="4"></circle>
-                    <circle id="timer-circle" class="text-[#cd2bee] transition-all duration-1000" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-dasharray="226" stroke-dashoffset="0" stroke-width="4"></circle>
-                </svg>
-                <span id="timer-txt" class="text-2xl font-extrabold">15</span>
-            </div>
+        <div class="relative size-24 flex items-center justify-center mb-4">
+            <svg class="absolute inset-0 size-full -rotate-90">
+                <circle class="text-white/10" cx="48" cy="48" r="44" fill="transparent" stroke="currentColor" stroke-width="4"></circle>
+                <circle id="timer-circle" class="text-[#cd2bee] transition-all duration-1000" cx="48" cy="48" r="44" fill="transparent" stroke="currentColor" stroke-dasharray="276" stroke-dashoffset="0" stroke-width="4"></circle>
+            </svg>
+            <span id="timer-txt" class="text-3xl font-black">15</span>
+        </div>
 
-            <div class="text-center">
-                <h2 class="text-2xl font-extrabold">באיזו שנה יצא השיר?</h2>
-                <p id="song-name" class="text-white/60 mt-1 font-medium italic">טוען...</p>
-            </div>
+        <h2 class="text-2xl font-black mb-1 text-center">באיזו שנה יצא השיר?</h2>
+        <p id="song-display" class="text-white/50 italic mb-8">טוען שיר...</p>
 
-            <div class="relative group my-4">
-                <div class="absolute -inset-4 bg-[#cd2bee]/20 rounded-full blur-2xl opacity-50"></div>
-                <div class="relative size-44 rounded-full glass-effect p-2 vinyl-glow animate-spin-slow">
-                    <div class="size-full rounded-full bg-black relative flex items-center justify-center overflow-hidden">
-                        <div class="absolute inset-0 opacity-30" style="background: repeating-radial-gradient(circle, transparent, transparent 2px, #333 3px, #333 4px);"></div>
-                        <div class="size-16 rounded-full bg-[#cd2bee] flex items-center justify-center border-4 border-black/50">
-                            <span class="material-symbols-outlined text-3xl text-white">music_note</span>
-                        </div>
+        <div class="relative mb-12" onclick="audio.play()">
+            <div class="absolute -inset-6 bg-[#cd2bee]/20 rounded-full blur-3xl"></div>
+            <div class="relative size-48 rounded-full bg-black border-4 border-[#cd2bee] vinyl-glow animate-spin-slow p-2">
+                <div class="size-full rounded-full flex items-center justify-center" style="background: repeating-radial-gradient(circle, #222, #111 2px, #222 3px);">
+                    <div class="size-16 rounded-full bg-[#cd2bee] border-4 border-black/50 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-3xl">music_note</span>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <div id="options-grid" class="w-full grid grid-cols-2 gap-3 pb-8"></div>
-        </main>
+        <div id="options" class="w-full grid grid-cols-2 gap-4"></div>
     </div>
 
-    <audio id="player" crossorigin="anonymous"></audio>
+    <audio id="audio" crossorigin="anonymous"></audio>
 
     <script>
         const firebaseConfig = {
@@ -92,61 +76,56 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const audio = document.getElementById('player');
-        let myName = "";
-        let timerInterval;
+        const audio = document.getElementById('audio');
+        let myName = "", timer;
 
-        const songs = [
-            { name: "The Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+        const playlist = [
+            { name: "OutKast - Hey Ya!", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
             { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-            { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-            { name: "Coolio - Gangsta's Paradise", year: 1995, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-            { name: "Abba - Dancing Queen", year: 1976, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" }
+            { name: "Dr. Dre - Still D.R.E.", year: 1999, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+            { name: "Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" }
         ];
 
         function startGame() {
             myName = document.getElementById('username').value;
-            if(!myName) return alert("הכנס שם!");
-            document.getElementById('lobby').classList.add('hidden');
-            document.getElementById('game-ui').classList.remove('hidden');
-            document.getElementById('player-display').innerText = "PLAYER: " + myName;
-            
+            if(!myName) return;
+            document.getElementById('lobby').style.display = 'none';
+            document.getElementById('game-ui').style.display = 'flex';
+            document.getElementById('p-name').innerText = "PLAYER: " + myName;
             db.ref('players/' + myName).set({ score: 0 });
             
             db.ref('currentQ').on('value', snap => {
-                let idx = snap.val() || 0;
-                loadQ(idx);
+                let val = snap.val();
+                loadQuestion(val === null ? 0 : val);
             });
         }
 
-        function loadQ(idx) {
-            const q = songs[idx % songs.length];
-            document.getElementById('song-name').innerText = q.name;
-            document.getElementById('q-count').innerText = `שאלה ${ (idx % songs.length) + 1 }/10`;
-            document.getElementById('prog-bar').style.width = ((idx % songs.length) + 1) * 10 + "%";
+        function loadQuestion(idx) {
+            const q = playlist[idx % playlist.length];
+            document.getElementById('song-display').innerText = q.name;
+            document.getElementById('q-count').innerText = `שאלה ${(idx % playlist.length) + 1}/10`;
             
-            const grid = document.getElementById('options-grid');
+            const grid = document.getElementById('options');
             grid.innerHTML = "";
             audio.src = q.url;
             audio.play().catch(() => {});
 
             startTimer();
 
-            const years = [q.year, q.year-4, q.year+2, q.year+5].sort(() => Math.random() - 0.5);
+            const years = [q.year, q.year-3, q.year+2, q.year+5].sort(() => Math.random() - 0.5);
             years.forEach(y => {
                 const b = document.createElement('button');
-                b.className = "flex items-center justify-center py-4 bg-white/5 border border-white/10 rounded-xl font-bold text-xl active:scale-95 transition-all";
+                b.className = "py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xl active:scale-95 transition-all";
                 b.innerText = y;
                 b.onclick = () => {
-                    clearInterval(timerInterval);
-                    const all = grid.querySelectorAll('button');
-                    all.forEach(btn => btn.onclick = null);
+                    clearInterval(timer);
+                    document.querySelectorAll('#options button').forEach(btn => btn.onclick = null);
                     if(y == q.year) {
-                        b.classList.add('correct-ans');
+                        b.classList.add('correct');
                         db.ref('players/' + myName + '/score').transaction(s => (s || 0) + 10);
                     } else {
-                        b.classList.add('wrong-ans');
-                        all.forEach(btn => { if(btn.innerText == q.year) btn.classList.add('correct-ans'); });
+                        b.classList.add('wrong');
+                        document.querySelectorAll('#options button').forEach(btn => { if(btn.innerText == q.year) btn.classList.add('correct'); });
                     }
                     setTimeout(() => db.ref('currentQ').transaction(c => (c || 0) + 1), 2000);
                 };
@@ -156,22 +135,19 @@
 
         function startTimer() {
             let t = 15;
-            clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
+            clearInterval(timer);
+            timer = setInterval(() => {
                 t--;
                 document.getElementById('timer-txt').innerText = t;
-                document.getElementById('timer-circle').style.strokeDashoffset = 226 - (226 * t / 15);
+                document.getElementById('timer-circle').style.strokeDashoffset = 276 - (276 * t / 15);
                 if(t <= 0) {
-                    clearInterval(timerInterval);
+                    clearInterval(timer);
                     db.ref('currentQ').transaction(c => (c || 0) + 1);
                 }
             }, 1000);
         }
 
-        function toggleMute() {
-            audio.muted = !audio.muted;
-            document.getElementById('vol-icon').innerText = audio.muted ? "volume_off" : "volume_up";
-        }
+        document.body.onclick = () => audio.play();
     </script>
 </body>
 </html>
