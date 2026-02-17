@@ -3,75 +3,71 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>MTV Trivia LIVE - המשחק</title>
+    <title>MTV Trivia - Leaderboard</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#cd2bee",
+                        "background-dark": "#1f1022",
+                        "gold": "#FFD700",
+                        "silver": "#C0C0C0",
+                        "bronze": "#CD7F32",
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; min-height: 100dvh; background: #1f1022; }
-        .glass-effect { background: rgba(45, 27, 50, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(205, 43, 238, 0.2); }
-        .vinyl-glow { box-shadow: 0 0 25px rgba(205, 43, 238, 0.4); }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin 8s linear infinite; }
-        .correct-ans { background: #00ff88 !important; color: black !important; border-color: #00ff88 !important; box-shadow: 0 0 20px #00ff88; }
-        .wrong-ans { background: #ff0055 !important; border-color: #ff0055 !important; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #1f1022; }
+        .synth-grid { background-image: linear-gradient(to bottom, rgba(205, 43, 238, 0.05) 1px, transparent 1px), linear-gradient(to right, rgba(205, 43, 238, 0.05) 1px, transparent 1px); background-size: 40px 40px; }
+        .neon-glow-primary { box-shadow: 0 0 15px rgba(205, 43, 238, 0.5); }
+        .neon-text-gold { text-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
     </style>
 </head>
-<body class="text-white flex flex-col overflow-hidden">
+<body class="text-white min-h-screen flex flex-col font-display">
 
-<header class="w-full px-6 pt-8 pb-4 relative z-10">
-    <div class="flex items-center justify-between mb-6">
-        <div class="bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
-            <span id="q-count" class="text-white text-sm font-bold">שאלה 1/10</span>
-        </div>
-        <div class="flex flex-col items-center">
-            <span id="player-name" class="text-primary text-xs font-bold uppercase tracking-widest">מחובר</span>
-            <span id="score-val" class="text-secondary text-lg font-black">0</span>
-        </div>
-        <button class="size-10 flex items-center justify-center rounded-full bg-white/10" onclick="toggleAudio()">
-            <span id="vol-icon" class="material-symbols-outlined">volume_up</span>
-        </button>
-    </div>
-    <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-        <div id="prog-bar" class="h-full bg-primary transition-all duration-500 shadow-[0_0_10px_#cd2bee]" style="width: 10%"></div>
+<header class="sticky top-0 z-50 bg-background-dark/80 backdrop-blur-md border-b border-primary/20 px-4 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-primary">trophy</span>
+        <h1 class="text-xl font-extrabold italic">לוח תוצאות <span class="text-primary">LIVE</span></h1>
     </div>
 </header>
 
-<main class="flex-1 flex flex-col items-center justify-between px-6 py-4 relative z-10">
-    <div class="relative size-20 flex items-center justify-center">
-        <svg class="absolute inset-0 size-full -rotate-90">
-            <circle class="text-white/10" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-width="4"></circle>
-            <circle id="timer-circle" class="text-primary transition-all duration-1000" cx="40" cy="40" fill="transparent" r="36" stroke="currentColor" stroke-dasharray="226" stroke-dashoffset="0" stroke-width="4"></circle>
-        </svg>
-        <span id="timer-txt" class="text-2xl font-extrabold">15</span>
-    </div>
-
-    <div class="text-center max-w-xs">
-        <h1 class="text-3xl font-extrabold leading-tight">באיזו שנה יצא השיר?</h1>
-        <p id="song-info" class="text-white/60 mt-2 font-medium">טוען שיר...</p>
-    </div>
-
-    <div class="relative group">
-        <div class="absolute -inset-4 bg-primary/20 rounded-full blur-2xl opacity-50"></div>
-        <div class="relative size-48 md:size-56 rounded-full glass-effect p-2 vinyl-glow animate-spin-slow">
-            <div class="size-full rounded-full bg-black relative flex items-center justify-center overflow-hidden">
-                <div class="absolute inset-0 opacity-30" style="background: repeating-radial-gradient(circle, transparent, transparent 2px, #333 3px, #333 4px);"></div>
-                <div class="size-20 rounded-full bg-primary border-4 border-black/50 overflow-hidden flex items-center justify-center">
-                    <span class="material-symbols-outlined text-4xl text-white">music_note</span>
-                </div>
-            </div>
+<main id="main-content" class="flex-1 overflow-y-auto synth-grid pb-32">
+    <div id="podium" class="relative px-4 pt-12 pb-8 flex justify-center items-end gap-2 sm:gap-6">
         </div>
-    </div>
 
-    <div id="options-grid" class="w-full grid grid-cols-2 gap-4 pb-10">
+    <div id="leaderboard-list" class="px-4 space-y-3">
         </div>
 </main>
 
-<audio id="player" crossorigin="anonymous"></audio>
+<nav class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-[#251c27]/95 backdrop-blur-xl border border-white/10 rounded-full px-6 py-3 flex items-center justify-between shadow-2xl z-50">
+    <a href="index.html" class="flex flex-col items-center gap-1 text-white/50">
+        <span class="material-symbols-outlined">home</span>
+        <span class="text-[10px] font-bold uppercase">בית</span>
+    </a>
+    <div class="flex flex-col items-center gap-1 text-primary relative">
+        <div class="absolute -top-10 bg-primary p-3 rounded-full shadow-lg neon-glow-primary">
+            <span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1">leaderboard</span>
+        </div>
+        <span class="mt-6 text-[10px] font-bold uppercase">דירוג</span>
+    </div>
+    <a href="#" class="flex flex-col items-center gap-1 text-white/50">
+        <span class="material-symbols-outlined">account_circle</span>
+        <span class="text-[10px] font-bold uppercase">פרופיל</span>
+    </a>
+</nav>
 
 <script>
+    // Firebase Config
     const firebaseConfig = {
         apiKey: "AIzaSyBSG7iAfYUCeCTqR3S5LrwmW8YoTjok9hM",
         authDomain: "music-trivia-90e88.firebaseapp.com",
@@ -84,70 +80,70 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const audio = document.getElementById('player');
-    let timeLeft = 15;
-    let timerInterval;
 
-    const songs = [
-        { name: "OutKast - Hey Ya!", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-        { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-        { name: "The Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-        { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" }
-    ];
+    // נסה לשלוף את השם השמור מהדפדפן
+    const myName = localStorage.getItem('trivia_name') || "";
 
-    function startTimer() {
-        timeLeft = 15;
-        clearInterval(timerInterval);
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById('timer-txt').innerText = timeLeft;
-            const offset = 226 - (226 * timeLeft / 15);
-            document.getElementById('timer-circle').style.strokeDashoffset = offset;
-            if(timeLeft <= 0) {
-                clearInterval(timerInterval);
-                db.ref('currentQ').transaction(c => (c || 0) + 1);
-            }
-        }, 1000);
-    }
+    db.ref('players').on('value', snap => {
+        const playersData = snap.val();
+        if(!playersData) return;
 
-    db.ref('currentQ').on('value', snap => {
-        const idx = snap.val() || 0;
-        loadQuestion(idx);
+        // הפיכה למערך ומיון לפי ניקוד
+        const sortedPlayers = Object.keys(playersData)
+            .map(name => ({ name, score: playersData[name].score || 0 }))
+            .sort((a, b) => b.score - a.score);
+
+        renderPodium(sortedPlayers.slice(0, 3));
+        renderList(sortedPlayers.slice(3));
     });
 
-    function loadQuestion(idx) {
-        const q = songs[idx % songs.length];
-        document.getElementById('song-info').innerText = q.name;
-        document.getElementById('q-count').innerText = `שאלה ${ (idx % songs.length) + 1 }/10`;
-        document.getElementById('prog-bar').style.width = ((idx % songs.length) + 1) * 10 + "%";
-        
-        const grid = document.getElementById('options-grid');
-        grid.innerHTML = "";
-        audio.src = q.url;
-        audio.play().catch(() => {});
+    function renderPodium(top3) {
+        const podiumDiv = document.getElementById('podium');
+        const colors = ['gold', 'silver', 'bronze'];
+        const pData = [
+            top3[1] || {name: "מחכה...", score: 0}, // מקום 2
+            top3[0] || {name: "מחכה...", score: 0}, // מקום 1
+            top3[2] || {name: "מחכה...", score: 0}  // מקום 3
+        ];
 
-        const years = [q.year, q.year-3, q.year+2, q.year+5].sort(() => Math.random() - 0.5);
-        years.forEach(y => {
-            const b = document.createElement('button');
-            b.className = "flex items-center justify-center py-5 px-4 bg-white/5 border border-white/10 rounded-xl transition-all";
-            b.innerHTML = `<span class="text-xl font-bold">${y}</span>`;
-            b.onclick = () => {
-                clearInterval(timerInterval);
-                if(y == q.year) b.classList.add('correct-ans');
-                else b.classList.add('wrong-ans');
-                setTimeout(() => db.ref('currentQ').transaction(c => (c || 0) + 1), 2000);
-            };
-            grid.appendChild(b);
-        });
-        startTimer();
+        podiumDiv.innerHTML = pData.map((p, i) => {
+            const isFirst = i === 1;
+            const colorClass = isFirst ? 'gold' : (i === 0 ? 'silver' : 'bronze');
+            const size = isFirst ? 'w-24 h-24' : 'w-18 h-18';
+            const rank = i === 1 ? 1 : (i === 0 ? 2 : 3);
+            
+            return `
+                <div class="flex flex-col items-center gap-3 w-1/3 ${isFirst ? '-translate-y-4' : ''}">
+                    <div class="relative">
+                        <div class="${size} rounded-full border-4 border-${colorClass} overflow-hidden shadow-lg bg-white/5 flex items-center justify-center">
+                            <span class="text-2xl font-black text-white/20">${p.name[0]}</span>
+                        </div>
+                        <div class="absolute -bottom-2 -right-2 bg-${colorClass} text-background-dark w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm">${rank}</div>
+                    </div>
+                    <div class="text-center">
+                        <p class="font-bold text-sm truncate w-24 text-white">${p.name}</p>
+                        <p class="text-xs text-${colorClass} font-bold">${p.score.toLocaleString()} נק'</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 
-    function toggleAudio() {
-        if(audio.muted) { audio.muted = false; document.getElementById('vol-icon').innerText = "volume_up"; }
-        else { audio.muted = true; document.getElementById('vol-icon').innerText = "volume_off"; }
+    function renderList(others) {
+        const listDiv = document.getElementById('leaderboard-list');
+        listDiv.innerHTML = others.map((p, i) => {
+            const isMe = p.name === myName;
+            return `
+                <div class="${isMe ? 'bg-primary/20 border-2 border-primary' : 'bg-white/5 border border-white/10'} rounded-2xl p-4 flex items-center gap-4">
+                    <span class="text-lg font-bold text-white/40 w-6">${i + 4}</span>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-white">${p.name} ${isMe ? '<span class="bg-primary text-[10px] px-2 py-0.5 rounded-full uppercase ml-2 text-white">אתה</span>' : ''}</h3>
+                    </div>
+                    <div class="text-left text-primary font-extrabold">${p.score.toLocaleString()} <span class="text-[10px] block text-white/40 uppercase">נקודות</span></div>
+                </div>
+            `;
+        }).join('');
     }
-    
-    document.body.onclick = () => audio.play();
 </script>
 </body>
 </html>
