@@ -2,97 +2,74 @@
 <html class="dark" dir="rtl" lang="he">
 <head>
     <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>MTV Trivia - Categories</title>
+    <title>MTV Trivia - בחירת קטגוריה</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet"/>
-    
     <style>
-        body { 
-            font-family: 'Space Grotesk', sans-serif; 
-            background-color: #0d0208; 
-            background-image: linear-gradient(to bottom, rgba(242, 13, 166, 0.05) 1px, transparent 1px), linear-gradient(to right, rgba(242, 13, 166, 0.05) 1px, transparent 1px);
-            background-size: 40px 40px;
-        }
-        .neon-text { text-shadow: 0 0 10px #cd2bee, 0 0 20px #cd2bee; }
-        .neon-card { 
-            background: rgba(26, 11, 22, 0.8); 
-            backdrop-filter: blur(12px); 
-            border: 2px solid rgba(205, 43, 238, 0.1); 
-            transition: all 0.3s ease;
-        }
-        .selected { 
-            border-color: #00f3ff; 
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4); 
-            transform: translateY(-5px);
-        }
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        body { font-family: 'Space Grotesk', sans-serif; background: #0a050b; color: white; overflow: hidden; height: 100dvh; }
+        .neon-border { border: 2px solid #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); }
+        .category-card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); transition: 0.3s; }
+        .selected { border: 2px solid #00f3ff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.5); background: rgba(0, 243, 255, 0.05); }
+        /* תיקון הטקסט ההפוך */
+        .ltr-text { direction: ltr; display: inline-block; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-6 text-white">
+<body class="flex flex-col items-center p-6">
 
-    <header class="w-full max-w-md flex items-center justify-between p-6 pt-10">
-        <button onclick="window.location.href='index.html'" class="bg-white/10 p-2 rounded-full border border-white/20">
-            <span class="material-symbols-outlined">arrow_forward</span>
-        </button>
-        <h1 class="text-3xl font-black italic neon-text uppercase tracking-tighter">בחר קטגוריה</h1>
-        <div class="w-10"></div>
+    <header class="w-full flex items-center justify-between mb-12 pt-4">
+        <h1 class="text-2xl font-black italic mx-auto">בחר קטגוריה</h1>
+        <button onclick="window.location.href='index.html'" class="material-symbols-outlined absolute right-6">arrow_forward</button>
     </header>
 
-    <main class="w-full max-w-md flex-1 overflow-y-auto hide-scrollbar pb-32">
-        <section class="mt-8">
-            <h2 class="text-[#00f3ff] text-xl font-bold italic mb-6 px-2">עשורים (Eras)</h2>
+    <main class="w-full max-w-md flex-1">
+        <section class="mb-10">
+            <h2 class="text-[#00f3ff] font-bold mb-4 px-2 text-xs tracking-widest uppercase">עשורים (ERAS)</h2>
             <div class="grid grid-cols-2 gap-4">
-                <div class="neon-card p-8 rounded-2xl cursor-pointer text-center group" onclick="selectCat(this, '80s')">
-                    <p class="text-3xl font-black italic group-hover:text-[#00f3ff]">80's</p>
-                    <p class="text-[10px] text-primary uppercase font-bold tracking-widest mt-2">Synthwave</p>
+                <div id="cat-90s" class="category-card selected rounded-2xl p-8 flex items-center justify-center cursor-pointer" onclick="select('90s')">
+                    <span class="text-3xl font-black italic ltr-text">90's</span>
                 </div>
-                <div class="neon-card p-8 rounded-2xl cursor-pointer text-center selected group" onclick="selectCat(this, '90s')">
-                    <p class="text-3xl font-black italic group-hover:text-[#00f3ff]">90's</p>
-                    <p class="text-[10px] text-[#00f3ff] uppercase font-bold tracking-widest mt-2">Grunge & Pop</p>
+                <div id="cat-80s" class="category-card rounded-2xl p-8 flex items-center justify-center cursor-pointer" onclick="select('80s')">
+                    <span class="text-3xl font-black italic ltr-text">80's</span>
                 </div>
             </div>
         </section>
 
-        <section class="mt-12">
-            <h2 class="text-[#cd2bee] text-xl font-bold italic mb-6 px-2">ז'אנרים (Genres)</h2>
+        <section class="mb-12">
+            <h2 class="text-[#cd2bee] font-bold mb-4 px-2 text-xs tracking-widest uppercase">ז'אנרים (GENRES)</h2>
             <div class="grid grid-cols-2 gap-4">
-                <div class="neon-card p-8 rounded-2xl cursor-pointer flex flex-col items-center group" onclick="selectCat(this, 'Rap')">
-                    <span class="material-symbols-outlined text-4xl mb-2 text-[#cd2bee]">mic_external_on</span>
-                    <h3 class="text-lg font-bold italic">ראפ</h3>
+                <div id="cat-dance" class="category-card rounded-2xl p-6 flex flex-col items-center gap-3 cursor-pointer" onclick="select('Dance')">
+                    <span class="material-symbols-outlined text-3xl">album</span>
+                    <span class="font-bold italic">דאנס</span>
                 </div>
-                <div class="neon-card p-8 rounded-2xl cursor-pointer flex flex-col items-center group" onclick="selectCat(this, 'Dance')">
-                    <span class="material-symbols-outlined text-4xl mb-2 text-[#cd2bee]">album</span>
-                    <h3 class="text-lg font-bold italic">דאנס</h3>
+                <div id="cat-rap" class="category-card rounded-2xl p-6 flex flex-col items-center gap-3 cursor-pointer" onclick="select('Rap')">
+                    <span class="material-symbols-outlined text-3xl">mic_external_on</span>
+                    <span class="font-bold italic">ראפ</span>
                 </div>
             </div>
         </section>
+
+        <button id="start-btn" onclick="startGame()" class="w-full bg-[#cd2bee] py-5 rounded-full text-2xl font-black shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+            <span>התחל!</span>
+            <span class="material-symbols-outlined font-black">bolt</span>
+        </button>
     </main>
 
-    <div class="fixed bottom-0 left-0 w-full p-8 bg-gradient-to-t from-[#0d0208] to-transparent">
-        <button onclick="startGame()" class="w-full max-w-md mx-auto bg-gradient-to-r from-[#cd2bee] to-[#00f3ff] py-5 rounded-2xl text-2xl font-black italic text-white shadow-[0_10px_30px_rgba(205,43,238,0.4)] active:scale-95 transition-all flex items-center justify-center gap-3">
-            <span>התחל!</span>
-            <span class="material-symbols-outlined font-black">play_arrow</span>
-        </button>
-    </div>
-
     <script>
-        let choice = '90s';
+        let selected = '90s';
 
-        function selectCat(el, cat) {
-            // מסיר סימון מכולם
-            document.querySelectorAll('.neon-card').forEach(c => c.classList.remove('selected'));
-            // מוסיף סימון לנבחר
-            el.classList.add('selected');
-            choice = cat;
-            console.log("Selected:", choice);
+        function select(id) {
+            document.querySelectorAll('.category-card').forEach(el => el.classList.remove('selected'));
+            if(id === '90s') document.getElementById('cat-90s').classList.add('selected');
+            if(id === '80s') document.getElementById('cat-80s').classList.add('selected');
+            if(id === 'Dance') document.getElementById('cat-dance').classList.add('selected');
+            if(id === 'Rap') document.getElementById('cat-rap').classList.add('selected');
+            selected = id;
         }
 
         function startGame() {
-            // שמירה בזיכרון המקומי
-            localStorage.setItem('selected_category', choice);
-            // מעבר לדף המשחק - וודא שהקובץ game.html קיים ב-GitHub!
-            window.location.href = 'game.html';
+            localStorage.setItem('selected_category', selected);
+            window.location.assign('game.html');
         }
     </script>
 </body>
