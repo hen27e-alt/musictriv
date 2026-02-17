@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="he">
+<head>
+    <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MTV Trivia - Settings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1" rel="stylesheet"/>
+    <style>
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #0d0208; background-image: linear-gradient(to bottom, rgba(242, 13, 166, 0.05) 1px, transparent 1px), linear-gradient(to right, rgba(242, 13, 166, 0.05) 1px, transparent 1px); background-size: 40px 40px; }
+        .neon-glow-pink { text-shadow: 0 0 10px rgba(242, 13, 166, 0.8); }
+        .glass-panel { background: rgba(26, 11, 22, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(242, 13, 166, 0.2); }
+        .neon-glow-cyan { box-shadow: 0 0 15px rgba(0, 243, 255, 0.6); }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col">
+
+    <header class="sticky top-0 z-50 glass-panel px-4 py-4 flex items-center justify-between">
+        <button onclick="window.location.href='index.html'" class="text-primary hover:text-white">
+            <span class="material-symbols-outlined text-3xl">chevron_right</span>
+        </button>
+        <h1 class="text-2xl font-bold text-[#f20da6] neon-glow-pink">הגדרות</h1>
+        <div class="w-8"></div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto px-4 py-6 pb-32 space-y-8 max-w-md mx-auto w-full">
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold text-[#f20da6]/80 uppercase tracking-widest px-1">שמע</h2>
+            <div class="glass-panel rounded-xl divide-y divide-[#f20da6]/10">
+                <div class="flex items-center justify-between p-4">
+                    <span class="text-lg font-medium">מוזיקת רקע</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="music-toggle" class="sr-only peer" checked onchange="saveSetting('music', this.checked)">
+                        <div class="w-14 h-7 bg-gray-800 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-[#00f3ff] neon-glow-cyan"></div>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-4">
+            <h2 class="text-lg font-bold text-[#f20da6]/80 uppercase tracking-widest px-1">חשבון</h2>
+            <div class="glass-panel rounded-xl p-4">
+                <div class="flex justify-between items-center">
+                    <span class="opacity-60 italic">מחובר כ:</span>
+                    <span id="settings-username" class="font-black text-[#00f3ff]">חן אלרואי</span>
+                </div>
+            </div>
+        </section>
+
+        <div class="pt-6">
+            <button onclick="logout()" class="w-full py-4 border-2 border-red-500/50 text-red-500 font-bold text-xl rounded-xl hover:bg-red-500 hover:text-white transition-all duration-300">
+                התנתק מהמערכת
+            </button>
+        </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 glass-panel border-t border-[#f20da6]/20 px-6 py-3 pb-8 flex items-center justify-between z-50">
+        <a href="index.html" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#f20da6]"><span class="material-symbols-outlined">home</span><span class="text-xs">ראשי</span></a>
+        <a href="game.html" class="flex flex-col items-center gap-1 text-gray-400 hover:text-[#f20da6]"><span class="material-symbols-outlined">sports_esports</span><span class="text-xs">טריוויה</span></a>
+        <a href="#" class="flex flex-col items-center gap-1 text-[#f20da6]"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1">settings</span><span class="text-xs">הגדרות</span></a>
+    </nav>
+
+    <script>
+        // טעינת הגדרות קיימות
+        document.getElementById('settings-username').innerText = localStorage.getItem('trivia_username') || "אורח";
+        const musicPref = localStorage.getItem('setting_music');
+        if(musicPref === 'false') document.getElementById('music-toggle').checked = false;
+
+        function saveSetting(key, val) {
+            localStorage.setItem('setting_' + key, val);
+            console.log(`Setting ${key} saved: ${val}`);
+        }
+
+        function logout() {
+            if(confirm("בטוח שאתה רוצה להתנתק?")) {
+                localStorage.removeItem('trivia_username');
+                window.location.href = 'index.html';
+            }
+        }
+    </script>
+</body>
+</html>
