@@ -3,46 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Trivia LIVE - קרב מוחות</title>
+    <title>MTV Trivia LIVE - חן אלרואי</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
         :root { --primary: #00f2ff; --secondary: #7000ff; --correct: #00ff88; --wrong: #ff0055; --bg: #050505; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow-x: hidden; }
-        .container { width: 90%; max-width: 450px; background: rgba(255,255,255,0.05); backdrop-filter: blur(15px); padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .visualizer { width: 100px; height: 100px; border: 4px solid var(--primary); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 0 20px var(--primary); animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } }
-        .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 18px; border-radius: 15px; font-size: 1.1rem; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 10px; font-weight: bold; }
-        .btn:hover { background: rgba(255,255,255,0.2); border-color: var(--primary); }
-        .correct { background: var(--correct) !important; color: black !important; box-shadow: 0 0 20px var(--correct); }
-        .wrong { background: var(--wrong) !important; box-shadow: 0 0 20px var(--wrong); }
-        #leaderboard { background: rgba(0,0,0,0.3); padding: 15px; border-radius: 15px; margin-bottom: 20px; text-align: right; }
-        .player-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        input { width: 100%; padding: 15px; border-radius: 12px; border: none; margin-bottom: 20px; background: rgba(255,255,255,0.1); color: white; text-align: center; font-size: 1.2rem; }
-        .hidden { display: none; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 95%; max-width: 500px; background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); padding: 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 8px; font-weight: bold; }
+        .correct { background: var(--correct) !important; color: black !important; }
+        .wrong { background: var(--wrong) !important; }
+        #leaderboard { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.9rem; }
+        .player-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .visualizer { width: 80px; height: 80px; border: 3px solid var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 15px var(--primary); animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
     </style>
 </head>
 <body>
 
 <div class="container" id="setup">
-    <h1>🎸 קרב מוחות LIVE</h1>
-    <p>הכנס שם כדי להצטרף לזירה:</p>
-    <input type="text" id="username" placeholder="השם שלך...">
-    <button class="btn" style="background: var(--primary); color: black;" onclick="joinGame()">היכנס למשחק</button>
+    <h1>🎧 MTV Trivia LIVE</h1>
+    <p>60s, 70s, 90s, 2000s | Dance & Rap</p>
+    <input type="text" id="username" placeholder="השם שלך..." style="width:80%; padding:15px; margin-bottom:15px; border-radius:10px; border:none;">
+    <button class="btn" style="background:var(--primary); color:black;" onclick="joinGame()">הצטרף לקרב המוחות</button>
 </div>
 
-<div class="container hidden" id="game">
+<div class="container hidden" id="game" style="display:none;">
     <div id="leaderboard"></div>
-    <div class="visualizer">🎵</div>
-    <h2 id="q-text">באיזו שנה יצא השיר?</h2>
+    <div class="visualizer">🎶</div>
+    <h2 id="q-text" style="font-size:1.2rem;">טוען שאלה...</h2>
     <div id="options"></div>
-    <div id="status" style="margin-top: 15px; color: var(--primary);"></div>
+    <div id="status" style="color:var(--primary); margin-top:10px;"></div>
 </div>
 
 <audio id="player" crossorigin="anonymous"></audio>
 
 <script>
-    // הגדרות Firebase ששלחת
     const firebaseConfig = {
         apiKey: "AIzaSyBSG7iAfYUCeCTqR3S5LrwmW8YoTjok9hM",
         authDomain: "music-trivia-90e88.firebaseapp.com",
@@ -59,35 +55,35 @@
     const audio = document.getElementById('player');
     let myName = "";
 
+    // פלייליסט ענק שכולל את כל העשורים שביקשת
     const songs = [
-        { name: "זהר ארגוב - הפרח בגני", year: 1982, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-        { name: "חיים משה - תן לזמן ללכת", year: 1984, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-        { name: "משינה - רכבת לילה לקהיר", year: 1985, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-        { name: "אייל גולן - דמעות", year: 1998, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" }
+        { name: "The Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+        { name: "Dr. Dre ft. Snoop Dogg - Still D.R.E.", year: 1999, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+        { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+        { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+        { name: "Abba - Dancing Queen", year: 1976, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+        { name: "Coolio - Gangsta's Paradise", year: 1995, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+        { name: "Britney Spears - Toxic", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" },
+        { name: "Queen - Bohemian Rhapsody", year: 1975, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" }
     ];
 
     function joinGame() {
         myName = document.getElementById('username').value;
         if (!myName) return alert("אנא הכנס שם");
-        document.getElementById('setup').classList.add('hidden');
-        document.getElementById('game').classList.remove('hidden');
-        
+        document.getElementById('setup').style.display = 'none';
+        document.getElementById('game').style.display = 'block';
         db.ref('players/' + myName).set({ score: 0 });
         initMultiplayer();
     }
 
     function initMultiplayer() {
-        // האזנה לטבלת שיאים חיה
         db.ref('players').on('value', snap => {
             const data = snap.val();
-            let html = "<strong>🏆 טבלת שיאים:</strong>";
-            for (let p in data) {
-                html += `<div class="player-row"><span>${p}</span><span>${data[p].score} נק'</span></div>`;
-            }
+            let html = "<strong>🏆 טבלת שיאים (Live):</strong>";
+            for (let p in data) { html += `<div class="player-row"><span>${p}</span><span>${data[p].score} נק'</span></div>`; }
             document.getElementById('leaderboard').innerHTML = html;
         });
 
-        // האזנה לשאלה הנוכחית (מסונכרן לכולם)
         db.ref('currentQ').on('value', snap => {
             const qIdx = snap.val() || 0;
             loadQuestion(qIdx);
@@ -95,15 +91,14 @@
     }
 
     function loadQuestion(idx) {
-        const q = songs[idx];
+        const q = songs[idx % songs.length];
         const optionsDiv = document.getElementById('options');
         optionsDiv.innerHTML = "";
-        document.getElementById('status').innerText = "";
         
         audio.src = q.url;
-        audio.play().catch(() => document.getElementById('status').innerText = "לחץ כאן להפעלת סאונד");
+        audio.play().catch(() => document.getElementById('status').innerText = "גע במסך לסאונד 🔊");
 
-        const years = [q.year, q.year-3, q.year+5, q.year-2].sort(() => Math.random() - 0.5);
+        const years = [q.year, q.year-5, q.year+2, q.year+10].sort(() => Math.random() - 0.5);
         years.forEach(y => {
             const b = document.createElement('button');
             b.className = 'btn';
@@ -114,27 +109,20 @@
     }
 
     function check(selected, correct, btn) {
-        const allBtns = document.querySelectorAll('.btn');
-        allBtns.forEach(b => b.onclick = null);
-
+        const btns = document.querySelectorAll('.btn');
+        btns.forEach(b => b.onclick = null);
         if (selected == correct) {
             btn.classList.add('correct');
             db.ref('players/' + myName + '/score').transaction(s => (s || 0) + 10);
-            setTimeout(triggerNext, 3000);
+            setTimeout(() => db.ref('currentQ').transaction(q => (q + 1)), 2000);
         } else {
             btn.classList.add('wrong');
-            // מציג את התשובה הנכונה
-            allBtns.forEach(b => { if(b.innerText == correct) b.classList.add('correct'); });
-            setTimeout(triggerNext, 3000);
+            btns.forEach(b => { if(b.innerText == correct) b.classList.add('correct'); });
+            setTimeout(() => db.ref('currentQ').transaction(q => (q + 1)), 2000);
         }
     }
 
-    function triggerNext() {
-        // רק שחקן אחד מעדכן את השאלה הבאה בבסיס הנתונים
-        db.ref('currentQ').transaction(q => (q + 1) % songs.length);
-    }
-
-    document.body.onclick = () => audio.play();
+    document.body.onclick = () => { audio.play(); document.getElementById('status').innerText = ""; };
 </script>
 </body>
 </html>
