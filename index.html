@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Trivia Master</title>
+    <style>
+        :root {
+            --primary: #00f2ff;
+            --secondary: #7000ff;
+            --bg: #050505;
+            --glass: rgba(255, 255, 255, 0.1);
+            --correct: #00ff88;
+            --wrong: #ff0055;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: white;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex; justify-content: center; align-items: center; height: 100vh;
+            overflow: hidden;
+        }
+
+        /* רקע דינמי */
+        body::before {
+            content: ""; position: absolute; width: 200%; height: 200%;
+            background: radial-gradient(circle, var(--secondary) 0%, transparent 25%);
+            top: -50%; left: -50%; opacity: 0.15; animation: move 15s linear infinite;
+        }
+        @keyframes move { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .app-container {
+            width: 90%; max-width: 400px; padding: 25px;
+            background: var(--glass); backdrop-filter: blur(20px);
+            border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);
+            text-align: center; position: relative; z-index: 10;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .header { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 20px; color: var(--primary); font-weight: bold; }
+
+        .visualizer {
+            width: 90px; height: 90px; margin: 0 auto 20px;
+            border: 3px solid var(--primary); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 40px;
+            box-shadow: 0 0 20px var(--primary);
+            animation: pulse 1.5s infinite ease-in-out;
+        }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); box-shadow: 0 0 35px var(--primary); } 100% { transform: scale(1); } }
+
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 25px 0; }
+
+        .btn {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+            color: white; padding: 18px; border-radius: 15px; font-size: 1.1rem;
+            cursor: pointer; transition: 0.3s; font-weight: 600;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn.correct { background: var(--correct); color: black; box-shadow: 0 0 20px var(--correct); border: none; }
+        .btn.wrong { background: var(--wrong); box-shadow: 0 0 20px var(--wrong); border: none; }
+
+        .lifelines { display: flex; gap: 12px; justify-content: center; margin-top: 10px; }
+        .lifeline-btn {
+            background: transparent; border: 1px solid var(--primary); color: var(--primary);
+            padding: 10px 20px; border-radius: 25px; font-size: 0.85rem; cursor: pointer;
+            transition: 0.3s;
+        }
+        .lifeline-btn:disabled { opacity: 0.2; cursor: not-allowed; border-color: #555; color: #555; }
+
+        #next-btn {
+            width: 100%; padding: 16px; margin-top: 20px; border-radius: 15px;
+            background: var(--primary); color: black; font-weight: bold; font-size: 1.1rem;
+            border: none; cursor: pointer; box-shadow: 0 5px 15px rgba(0,242,255,0.3);
+        }
+
+        .hidden { display: none; }
+        .fade { opacity: 0.1; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <span id="q-progress">טוען...</span>
+        <span id="score-display">0 נקודות</span>
+    </div>
+
+    <div class="visualizer" id="icon">🎵</div>
+
+    <h2 id="question-text" style="margin: 10px 0; font-size: 1.4rem;">באיזו שנה יצא השיר?</h2>
+
+    <div class="options-grid" id="options-grid"></div>
+
+    <div class="lifelines">
+        <button id="l-50" class="lifeline-btn" onclick="use5050()">50/50</button>
+        <button id="l-aud" class="lifeline-btn" onclick="useAudience()">עזרת קהל</button>
+    </div>
+
+    <button id="next-btn" class="hidden" onclick="loadNextQuestion()">לשאלה הבאה ➔</button>
+</div>
+
+<audio id="audio-player"></audio>
+
+<script>
+    // מאגר שירים מגוון (מזרחית, ישראלי, בינלאומי)
+    const masterPlaylist = [
+        { name: "זהר ארגוב - הפרח בגני", year: 1982, preview: "https://p.scdn.co/mp3-preview/b00d60d2b7c6c44933a39e08398418f4a1f5927c" },
+        { name: "חיים משה - תן לזמן ללכת", year: 1984, preview: "https://p.scdn.co/mp3-preview/63e800624d7883e60156d95950889f074218f26d" },
+        { name: "משינה - רכבת לילה לקהיר", year: 1985, preview: "https://p.scdn.co/mp3-preview/d9e264585c7f89694e99f9286f03d2212d918359" },
+        { name: "שלמה ארצי - תגידי", year: 1992, preview: "https://p.scdn.co/mp3-preview/7488c60777b754972f10b89286f03d2212d918359" },
+        { name: "אייל גולן - דמעות", year: 1998, preview: "https://p.scdn.co/mp3-preview/788c60777b754972f10b89286f03d2212d918359" },
+        { name: "מושיק עפיה ושלומי סרנגה - חלום מתוק", year: 2002, preview: "https://p.scdn.co/mp3-preview/b0e5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "Michael Jackson - Beat It", year: 1982, preview: "https://p.scdn.co/mp3-preview/b0e5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "Queen - Radio Ga Ga", year: 1984, preview: "https://p.scdn.co/mp3-preview/a34e067c2957b4476686a65584562214300e84c9" },
+        { name: "Snap! - Rhythm is a Dancer", year: 1992, preview: "https://p.scdn.co/mp3-preview/c01e5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "Coolio - Gangsta's Paradise", year: 1995, preview: "https://p.scdn.co/mp3-preview/5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "Britney Spears - Oops!... I Did It Again", year: 2000, preview: "https://p.scdn.co/mp3-preview/b0e5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "Haddaway - What Is Love", year: 1993, preview: "https://p.scdn.co/mp3-preview/d9e264585c7f89694e99f9286f03d2212d918359" },
+        { name: "Spice Girls - Wannabe", year: 1996, preview: "https://p.scdn.co/mp3-preview/9f2e77405785f866416d616d274e1d15440d" },
+        { name: "Avicii - Levels", year: 2011, preview: "https://p.scdn.co/mp3-preview/a34e067c2957b4476686a65584562214300e84c9" },
+        { name: "דנה אינטרנשיונל - דיווה", year: 1998, preview: "https://p.scdn.co/mp3-preview/421160356c388658edcf416d616d274e1d15440d" },
+        { name: "טיפקס - בתוך נייר עיתון", year: 1993, preview: "https://p.scdn.co/mp3-preview/a34e067c2957b4476686a65584562214300e84c9" },
+        { name: "שפיות זמנית - הקיץ האחרון", year: 1991, preview: "https://p.scdn.co/mp3-preview/9f2e77405785f866416d616d274e1d15440d" },
+        { name: "Pharrell Williams - Happy", year: 2013, preview: "https://p.scdn.co/mp3-preview/b0e5170d7681c532ef1765c7f8fa553df8a2f3a6" },
+        { name: "The Black Eyed Peas - I Gotta Feeling", year: 2009, preview: "https://p.scdn.co/mp3-preview/421160356c388658edcf416d616d274e1d15440d" },
+        { name: "נועה קירל - פנתרה", year: 2022, preview: "https://p.scdn.co/mp3-preview/5170d7681c532ef1765c7f8fa553df8a2f3a6" }
+    ];
+
+    let gameQuestions = [];
+    let currentIdx = 0;
+    let score = 0;
+    const player = document.getElementById('audio-player');
+
+    function initGame() {
+        // ערבוב ובחירת 20 שאלות
+        gameQuestions = [...masterPlaylist].sort(() => Math.random() - 0.5).slice(0, 20);
+        currentIdx = 0;
+        score = 0;
+        document.getElementById('score-display').innerText = "0 נקודות";
+        showQuestion();
+    }
+
+    function generateOptions(correct) {
+        let years = new Set([correct.toString()]);
+        while(years.size < 4) {
+            let offset = Math.floor(Math.random() * 11) - 5; // טווח של 5 שנים לכל צד
+            let randomYear = correct + offset;
+            years.add(randomYear.toString());
+        }
+        return [...years].sort(() => Math.random() - 0.5);
+    }
+
+    function showQuestion() {
+        const q = gameQuestions[currentIdx];
+        const grid = document.getElementById('options-grid');
+        const nextBtn = document.getElementById('next-btn');
+
+        document.getElementById('q-progress').innerText = `שאלה ${currentIdx + 1}/20`;
+        document.getElementById('icon').innerText = "🎵";
+        nextBtn.classList.add('hidden');
+        grid.innerHTML = "";
+
+        player.src = q.preview;
+        player.play();
+
+        const options = generateOptions(q.year);
+        options.forEach(y => {
+            const b = document.createElement('button');
+            b.className = 'btn';
+            b.innerText = y;
+            b.onclick = () => checkAnswer(b, y, q.year);
+            grid.appendChild(b);
+        });
+    }
+
+    function checkAnswer(btn, selected, correct) {
+        const btns = document.querySelectorAll('.btn');
+        btns.forEach(b => b.onclick = null); // חסימת לחיצות נוספות
+
+        if (selected == correct) {
+            btn.classList.add('correct');
+            document.getElementById('icon').innerText = "🎯";
+            score += 10;
+        } else {
+            btn.classList.add('wrong');
+            document.getElementById('icon').innerText = "❌";
+            btns.forEach(b => {
+                if(b.innerText == correct) b.classList.add('correct');
+            });
+        }
+        document.getElementById('score-display').innerText = `${score} נקודות`;
+        document.getElementById('next-btn').classList.remove('hidden');
+    }
+
+    function loadNextQuestion() {
+        currentIdx++;
+        if (currentIdx < gameQuestions.length) {
+            showQuestion();
+        } else {
+            alert(`כל הכבוד! סיימת את המשחק עם ${score} נקודות.`);
+            initGame();
+        }
+    }
+
+    function use5050() {
+        const correct = gameQuestions[currentIdx].year;
+        let hiddenCount = 0;
+        const btns = document.querySelectorAll('.btn');
+        btns.forEach(b => {
+            if (b.innerText != correct && hiddenCount < 2) {
+                b.classList.add('fade');
+                b.onclick = null;
+                hiddenCount++;
+            }
+        });
+        document.getElementById('l-50').disabled = true;
+    }
+
+    function useAudience() {
+        const correct = gameQuestions[currentIdx].year;
+        alert(`הקהל חושב שהתשובה היא ${correct} ב-74% ביטחון!`);
+        document.getElementById('l-aud').disabled = true;
+    }
+
+    window.onload = initGame;
+</script>
+
+</body>
+</html>
