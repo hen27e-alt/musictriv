@@ -2,7 +2,7 @@
 <html class="dark" dir="rtl" lang="he">
 <head>
     <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>MTV Trivia LIVE</title>
+    <title>MTV Trivia LIVE - PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -10,42 +10,55 @@
         body { font-family: sans-serif; background: #1f1022; color: white; overflow: hidden; height: 100dvh; }
         .vinyl-glow { box-shadow: 0 0 30px rgba(205, 43, 238, 0.5); }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .animate-spin-slow { animation: spin 6s linear infinite; }
-        .correct { background: #00ff88 !important; color: black !important; }
-        .wrong { background: #ff0055 !important; }
+        .animate-spin-slow { animation: spin 4s linear infinite; }
+        .correct { background: #00ff88 !important; color: black !important; border: none; }
+        .wrong { background: #ff0055 !important; border: none; }
+        .hidden { display: none !important; }
     </style>
 </head>
-<body class="flex flex-col items-center p-6">
+<body class="flex flex-col items-center p-6 text-center">
+
     <div id="lobby" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#1f1022]">
-        <h1 class="text-4xl font-black mb-8 italic">MTV <span class="text-[#cd2bee]">TRIVIA</span></h1>
-        <input type="text" id="username" class="bg-white/10 border-2 border-[#cd2bee]/30 rounded-2xl p-4 text-center text-xl mb-6 outline-none" placeholder="הכנס שם...">
-        <button onclick="startGame()" class="bg-[#cd2bee] px-12 py-5 rounded-full text-2xl font-black shadow-lg">הצטרף ⚡</button>
+        <h1 class="text-5xl font-black mb-4 italic">MTV <span class="text-[#cd2bee]">TRIVIA</span></h1>
+        <p class="text-white/50 mb-8">10 שאלות • 15 שניות • מנצח אחד</p>
+        <input type="text" id="username" class="bg-white/10 border-2 border-[#cd2bee]/30 rounded-2xl p-4 text-center text-xl mb-6 outline-none focus:border-[#cd2bee]" placeholder="הכנס שם...">
+        <button onclick="startGame()" class="bg-[#cd2bee] px-16 py-5 rounded-full text-2xl font-black shadow-lg hover:scale-105 transition-transform">התחל משחק ⚡</button>
+    </div>
+
+    <div id="end-screen" class="hidden fixed inset-0 z-[110] flex flex-col items-center justify-center bg-[#1f1022] p-8">
+        <h2 class="text-4xl font-black mb-2 text-[#00f3ff]">המשחק נגמר!</h2>
+        <p id="final-score-txt" class="text-6xl font-black mb-10">0</p>
+        <button onclick="location.reload()" class="bg-white/10 px-8 py-4 rounded-full border border-white/20">שחק שוב</button>
     </div>
 
     <div id="game-ui" class="hidden flex flex-col items-center w-full max-w-md h-full">
-        <div class="flex justify-between w-full mb-8">
-            <span id="q-count" class="bg-[#cd2bee]/20 px-3 py-1 rounded-full text-xs">שאלה 1</span>
-            <span id="score" class="text-[#00f3ff] text-2xl font-black">0</span>
-        </div>
-
-        <div class="relative size-24 mb-6">
-            <svg class="absolute inset-0 size-full -rotate-90"><circle id="timer-circle" class="text-[#cd2bee]" cx="48" cy="48" r="44" fill="transparent" stroke="currentColor" stroke-width="4" stroke-dasharray="276"></circle></svg>
-            <div class="absolute inset-0 flex items-center justify-center text-3xl font-black" id="timer-txt">15</div>
-        </div>
-
-        <h2 class="text-2xl font-bold text-center mb-1">באיזו שנה יצא השיר?</h2>
-        <p id="song-display" class="text-white/40 italic mb-8">טוען...</p>
-
-        <div class="relative mb-12" onclick="audio.play()">
-            <div class="size-48 rounded-full bg-black border-4 border-[#cd2bee] vinyl-glow animate-spin-slow flex items-center justify-center">
-                <div class="size-14 rounded-full bg-[#cd2bee] border-4 border-black/50"></div>
+        <div class="flex justify-between w-full mb-8 pt-4">
+            <span id="q-count" class="bg-[#cd2bee]/20 px-4 py-1 rounded-full text-sm font-bold">שאלה 1/10</span>
+            <div class="flex flex-col">
+                <span id="player-label" class="text-xs text-[#cd2bee] font-bold uppercase"></span>
+                <span id="score" class="text-[#00f3ff] text-2xl font-black leading-none">0</span>
             </div>
         </div>
 
-        <div id="options" class="grid grid-cols-2 gap-4 w-full"></div>
+        <div class="relative size-24 mb-6">
+            <svg class="absolute inset-0 size-full -rotate-90"><circle id="timer-circle" class="text-[#cd2bee] transition-all duration-1000" cx="48" cy="48" r="44" fill="transparent" stroke="currentColor" stroke-width="4" stroke-dasharray="276" stroke-dashoffset="0"></circle></svg>
+            <div class="absolute inset-0 flex items-center justify-center text-3xl font-extrabold" id="timer-txt">15</div>
+        </div>
+
+        <h2 class="text-2xl font-black mb-2">באיזו שנה יצא השיר?</h2>
+        <p id="song-display" class="text-[#00f3ff] italic font-bold mb-8 opacity-80">טוען להיט...</p>
+
+        <div class="relative mb-12">
+            <div class="size-48 rounded-full bg-black border-4 border-[#cd2bee] vinyl-glow animate-spin-slow flex items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 opacity-20" style="background: repeating-radial-gradient(circle, transparent, transparent 2px, #fff 3px, #fff 4px);"></div>
+                <div class="size-16 rounded-full bg-[#cd2bee] border-4 border-black/50 z-10"></div>
+            </div>
+        </div>
+
+        <div id="options" class="grid grid-cols-2 gap-4 w-full px-2"></div>
     </div>
 
-    <audio id="audio" crossorigin="anonymous"></audio>
+    <audio id="audio" preload="auto" crossorigin="anonymous"></audio>
 
     <script>
         const firebaseConfig = {
@@ -58,54 +71,99 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
         const audio = document.getElementById('audio');
-        let myName = "", timer;
+        let myName = "", timer, currentScore = 0;
 
-        const songs = [
-            { name: "OutKast - Hey Ya!", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-            { name: "Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-            { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" }
+        const playlist = [
+            { name: "Michael Jackson - Thriller", year: 1982, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
+            { name: "Queen - Bohemian Rhapsody", year: 1975, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+            { name: "Britney Spears - Toxic", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+            { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
+            { name: "Nirvana - Smells Like Teen Spirit", year: 1991, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+            { name: "Madonna - Like a Virgin", year: 1984, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+            { name: "Coolio - Gangsta's Paradise", year: 1995, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+            { name: "Backstreet Boys - I Want It That Way", year: 1999, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
+            { name: "Bon Jovi - Livin' on a Prayer", year: 1986, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" },
+            { name: "Beyoncé - Crazy In Love", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" }
         ];
 
         function startGame() {
             myName = document.getElementById('username').value;
             if(!myName) return;
-            document.getElementById('lobby').style.display = 'none';
-            document.getElementById('game-ui').style.display = 'flex';
+            document.getElementById('lobby').classList.add('hidden');
+            document.getElementById('game-ui').classList.remove('hidden');
+            document.getElementById('player-label').innerText = myName;
+            
             db.ref('players/' + myName).set({ score: 0 });
-            db.ref('currentQ').on('value', snap => loadQ(snap.val() || 0));
+            db.ref('currentQ').on('value', snap => {
+                let idx = snap.val() || 0;
+                if (idx >= 10) {
+                    showEnd();
+                } else {
+                    loadQ(idx);
+                }
+            });
         }
 
         function loadQ(idx) {
-            const q = songs[idx % songs.length];
+            const q = playlist[idx];
             document.getElementById('song-display').innerText = q.name;
+            document.getElementById('q-count').innerText = `שאלה ${idx + 1}/10`;
+            
             const grid = document.getElementById('options');
             grid.innerHTML = "";
-            audio.src = q.url;
-            audio.play().catch(() => {});
             
-            let t = 15;
-            clearInterval(timer);
-            timer = setInterval(() => {
-                t--;
-                document.getElementById('timer-txt').innerText = t;
-                document.getElementById('timer-circle').style.strokeDashoffset = 276 - (276 * t / 15);
-                if(t <= 0) { clearInterval(timer); db.ref('currentQ').transaction(c => (c || 0) + 1); }
-            }, 1000);
+            audio.src = q.url;
+            audio.load();
+            audio.play().catch(e => console.log("Sound blocked:", e));
 
-            [q.year, q.year-5, q.year+3, q.year-2].sort(() => Math.random() - 0.5).forEach(y => {
+            startTimer();
+
+            // יצירת שנים רנדומליות
+            let years = [q.year, q.year-4, q.year+3, q.year-7].sort(() => Math.random() - 0.5);
+            years.forEach(y => {
                 const b = document.createElement('button');
-                b.className = "py-4 bg-white/5 border border-white/10 rounded-2xl font-bold";
+                b.className = "py-4 bg-white/5 border border-white/10 rounded-2xl font-bold text-xl active:scale-95 transition-all";
                 b.innerText = y;
                 b.onclick = () => {
                     clearInterval(timer);
-                    if(y == q.year) { b.classList.add('correct'); db.ref('players/' + myName + '/score').transaction(s => (s || 0) + 10); }
-                    else b.classList.add('wrong');
-                    setTimeout(() => db.ref('currentQ').transaction(c => (c || 0) + 1), 1500);
+                    document.querySelectorAll('#options button').forEach(btn => btn.onclick = null);
+                    if(y == q.year) {
+                        b.classList.add('correct');
+                        currentScore += 10;
+                        document.getElementById('score').innerText = currentScore;
+                        db.ref('players/' + myName + '/score').set(currentScore);
+                    } else {
+                        b.classList.add('wrong');
+                        document.querySelectorAll('#options button').forEach(btn => { if(btn.innerText == q.year) btn.classList.add('correct'); });
+                    }
+                    setTimeout(() => db.ref('currentQ').set(idx + 1), 2000);
                 };
                 grid.appendChild(b);
             });
         }
-        document.body.onclick = () => audio.play();
+
+        function startTimer() {
+            let t = 15;
+            clearInterval(timer);
+            document.getElementById('timer-txt').innerText = t;
+            document.getElementById('timer-circle').style.strokeDashoffset = 0;
+            
+            timer = setInterval(() => {
+                t--;
+                document.getElementById('timer-txt').innerText = t;
+                document.getElementById('timer-circle').style.strokeDashoffset = 276 - (276 * t / 15);
+                if(t <= 0) {
+                    clearInterval(timer);
+                    db.ref('currentQ').transaction(c => (c || 0) + 1);
+                }
+            }, 1000);
+        }
+
+        function showEnd() {
+            document.getElementById('game-ui').classList.add('hidden');
+            document.getElementById('end-screen').classList.remove('hidden');
+            document.getElementById('final-score-txt').innerText = currentScore;
+        }
     </script>
 </body>
 </html>
