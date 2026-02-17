@@ -11,39 +11,43 @@
         body { margin: 0; background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { width: 95%; max-width: 500px; background: rgba(255,255,255,0.05); backdrop-filter: blur(20px); padding: 25px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 15px; border-radius: 12px; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 8px; font-weight: bold; }
-        .correct { background: var(--correct) !important; color: black !important; }
-        .wrong { background: var(--wrong) !important; }
-        #leaderboard { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.9rem; }
+        .btn:active { transform: scale(0.98); }
+        .correct { background: var(--correct) !important; color: black !important; box-shadow: 0 0 15px var(--correct); }
+        .wrong { background: var(--wrong) !important; box-shadow: 0 0 15px var(--wrong); }
+        #leaderboard { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.9rem; border: 1px solid var(--secondary); }
         .player-row { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .visualizer { width: 80px; height: 80px; border: 3px solid var(--primary); border-radius: 50%; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 0 15px var(--primary); animation: pulse 1.5s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        input { width: 80%; padding: 15px; margin-bottom: 15px; border-radius: 10px; border: none; background: rgba(255,255,255,0.1); color: white; text-align: center; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
 <div class="container" id="setup">
     <h1>🎧 MTV Trivia LIVE</h1>
-    <p>60s, 70s, 90s, 2000s | Dance & Rap</p>
-    <input type="text" id="username" placeholder="השם שלך..." style="width:80%; padding:15px; margin-bottom:15px; border-radius:10px; border:none;">
-    <button class="btn" style="background:var(--primary); color:black;" onclick="joinGame()">הצטרף לקרב המוחות</button>
+    <p>קרב מוחות: 60s, 70s, 90s, 2000s</p>
+    <input type="text" id="username" placeholder="השם שלך...">
+    <button class="btn" style="background:var(--primary); color:black;" onclick="joinGame()">הצטרף למשחק</button>
 </div>
 
-<div class="container hidden" id="game" style="display:none;">
+<div class="container hidden" id="game">
     <div id="leaderboard"></div>
     <div class="visualizer">🎶</div>
-    <h2 id="q-text" style="font-size:1.2rem;">טוען שאלה...</h2>
+    <h2 id="q-text">באיזו שנה יצא השיר?</h2>
     <div id="options"></div>
-    <div id="status" style="color:var(--primary); margin-top:10px;"></div>
+    <div id="status" style="color:var(--primary); margin-top:10px; font-weight: bold;"></div>
 </div>
 
 <audio id="player" crossorigin="anonymous"></audio>
 
 <script>
+    // הגדרות Firebase המעודכנות לפי השרת בבלגיה
     const firebaseConfig = {
         apiKey: "AIzaSyBSG7iAfYUCeCTqR3S5LrwmW8YoTjok9hM",
         authDomain: "music-trivia-90e88.firebaseapp.com",
         projectId: "music-trivia-90e88",
-        databaseURL: "https://music-trivia-90e88-default-rtdb.europe-west1.firebasedatabase.app/",
+        databaseURL: "https://music-trivia-90e88-default-rtdb.europe-west1.firebasedatabase.app/", 
         storageBucket: "music-trivia-90e88.firebasestorage.app",
         messagingSenderId: "202068722806",
         appId: "1:202068722806:web:93d9c6dac3695e8048cb57",
@@ -55,38 +59,47 @@
     const audio = document.getElementById('player');
     let myName = "";
 
-    // פלייליסט ענק שכולל את כל העשורים שביקשת
+    // פלייליסט MTV מגוון: ראפ, דאנס ונוסטלגיה
     const songs = [
         { name: "The Beatles - Let It Be", year: 1970, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-        { name: "Dr. Dre ft. Snoop Dogg - Still D.R.E.", year: 1999, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
+        { name: "Queen - We Will Rock You", year: 1977, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
         { name: "Snap! - Rhythm is a Dancer", year: 1992, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
-        { name: "Eminem - Without Me", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-        { name: "Abba - Dancing Queen", year: 1976, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+        { name: "Dr. Dre - Still D.R.E.", year: 1999, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
         { name: "Coolio - Gangsta's Paradise", year: 1995, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" },
-        { name: "Britney Spears - Toxic", year: 2003, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" },
-        { name: "Queen - Bohemian Rhapsody", year: 1975, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" }
+        { name: "Eminem - Lose Yourself", year: 2002, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3" },
+        { name: "Abba - Mamma Mia", year: 1975, url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3" }
     ];
 
     function joinGame() {
         myName = document.getElementById('username').value;
         if (!myName) return alert("אנא הכנס שם");
-        document.getElementById('setup').style.display = 'none';
-        document.getElementById('game').style.display = 'block';
+        document.getElementById('setup').classList.add('hidden');
+        document.getElementById('game').classList.remove('hidden');
+        
+        // אתחול ניקוד השחקן בשרת
         db.ref('players/' + myName).set({ score: 0 });
         initMultiplayer();
     }
 
     function initMultiplayer() {
+        // עדכון טבלת שיאים חיה לכולם
         db.ref('players').on('value', snap => {
             const data = snap.val();
-            let html = "<strong>🏆 טבלת שיאים (Live):</strong>";
-            for (let p in data) { html += `<div class="player-row"><span>${p}</span><span>${data[p].score} נק'</span></div>`; }
+            let html = "<strong>🏆 טבלת שיאים (LIVE):</strong>";
+            for (let p in data) {
+                html += `<div class="player-row"><span>${p}</span><span>${data[p].score} נק'</span></div>`;
+            }
             document.getElementById('leaderboard').innerHTML = html;
         });
 
+        // סנכרון השאלה הנוכחית בין כל השחקנים
         db.ref('currentQ').on('value', snap => {
-            const qIdx = snap.val() || 0;
-            loadQuestion(qIdx);
+            const qIdx = snap.val();
+            if (qIdx === null) {
+                db.ref('currentQ').set(0); // אתחול אם השרת ריק
+            } else {
+                loadQuestion(qIdx);
+            }
         });
     }
 
@@ -94,11 +107,13 @@
         const q = songs[idx % songs.length];
         const optionsDiv = document.getElementById('options');
         optionsDiv.innerHTML = "";
+        document.getElementById('status').innerText = "";
         
         audio.src = q.url;
-        audio.play().catch(() => document.getElementById('status').innerText = "גע במסך לסאונד 🔊");
+        audio.play().catch(() => document.getElementById('status').innerText = "🔊 גע במסך להפעלת סאונד");
 
-        const years = [q.year, q.year-5, q.year+2, q.year+10].sort(() => Math.random() - 0.5);
+        // יצירת תשובות רנדומליות מסביב לשנה הנכונה
+        const years = [q.year, q.year-4, q.year+2, q.year+7].sort(() => Math.random() - 0.5);
         years.forEach(y => {
             const b = document.createElement('button');
             b.className = 'btn';
@@ -110,19 +125,24 @@
 
     function check(selected, correct, btn) {
         const btns = document.querySelectorAll('.btn');
-        btns.forEach(b => b.onclick = null);
+        btns.forEach(b => b.onclick = null); // מניעת לחיצות כפולות
+
         if (selected == correct) {
             btn.classList.add('correct');
+            document.getElementById('status').innerText = "🎯 פגיעה בול!";
+            // עדכון ניקוד בשרת
             db.ref('players/' + myName + '/score').transaction(s => (s || 0) + 10);
-            setTimeout(() => db.ref('currentQ').transaction(q => (q + 1)), 2000);
+            setTimeout(() => db.ref('currentQ').transaction(q => q + 1), 2000);
         } else {
             btn.classList.add('wrong');
+            document.getElementById('status').innerText = "❌ טעות! התשובה היא " + correct;
             btns.forEach(b => { if(b.innerText == correct) b.classList.add('correct'); });
-            setTimeout(() => db.ref('currentQ').transaction(q => (q + 1)), 2000);
+            setTimeout(() => db.ref('currentQ').transaction(q => q + 1), 3000);
         }
     }
 
-    document.body.onclick = () => { audio.play(); document.getElementById('status').innerText = ""; };
+    // הפעלה כפויה של סאונד לניידים
+    document.body.onclick = () => { audio.play(); };
 </script>
 </body>
 </html>
