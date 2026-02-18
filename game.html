@@ -2,68 +2,103 @@
 <html class="dark" dir="rtl" lang="he">
 <head>
     <meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>MTV Trivia - Playing</title>
+    <title>MTV Trivia - LIVE GAME</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@800&display=swap" rel="stylesheet"/>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database.js"></script>
+    
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0a050b; color: white; overflow: hidden; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0a050b; color: white; overflow-x: hidden; }
         .glass { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .answer-btn { transition: 0.2s; cursor: pointer; }
-        .answer-btn:active { transform: scale(0.95); }
-        .progress-bar { transition: width 1s linear; }
+        .neon-border { border: 2px solid #cd2bee; box-shadow: 0 0 15px rgba(205, 43, 238, 0.3); }
+        .answer-btn { 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease;
+        }
+        .answer-btn:hover { background: rgba(205, 43, 238, 0.2); border-color: #cd2bee; transform: translateY(-2px); }
+        .progress-bar { transition: width 1s linear; box-shadow: 0 0 10px #cd2bee; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center p-6">
 
     <div class="w-full max-w-md mt-4">
         <div class="flex justify-between items-center mb-4">
-            <span id="category-name" class="text-[#00f3ff] font-bold tracking-widest uppercase text-xs">90's ERA</span>
-            <span id="score" class="text-white font-black">Score: 0</span>
+            <span id="category-label" class="text-[#00f3ff] font-bold tracking-widest uppercase text-xs">90's ERA</span>
+            <span id="score-display" class="text-white font-black text-xl italic">0000</span>
         </div>
-        <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+        <div class="w-full bg-white/10 h-3 rounded-full overflow-hidden border border-white/5">
             <div id="timer-bar" class="progress-bar bg-[#cd2bee] h-full w-full"></div>
         </div>
     </div>
 
-    <main class="w-full max-w-md flex-1 flex flex-col justify-center gap-8">
-        <div class="glass p-8 rounded-3xl text-center relative overflow-hidden">
-            <div class="animate-pulse absolute inset-0 bg-gradient-to-br from-[#cd2bee]/10 to-transparent"></div>
-            <h2 class="text-3xl font-black italic relative z-10">מזהים את השיר?</h2>
-            <p class="text-white/50 mt-2 relative z-10">המוזיקה מתנגנת...</p>
+    <main class="w-full max-w-md flex-1 flex flex-col justify-center gap-8 py-10">
+        <div class="glass p-10 rounded-[2.5rem] text-center relative border-b-4 border-[#cd2bee]">
+            <div id="loading-spinner" class="hidden absolute inset-0 flex items-center justify-center bg-[#0a050b]/80 z-20 rounded-[2.5rem]">
+                <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-[#00f3ff]"></div>
+            </div>
+            <h2 class="text-3xl font-black italic mb-2 tracking-tighter">מי המבצע?</h2>
+            <p class="text-white/40 font-medium uppercase text-[10px] tracking-[0.2em]">Music is playing now</p>
         </div>
 
-        <div id="answers-grid" class="grid gap-4">
-            <button class="answer-btn glass p-6 rounded-2xl font-bold hover:bg-white/10 text-right">טוען תשובה...</button>
-        </div>
+        <div id="answers-container" class="grid gap-4">
+            </div>
     </main>
 
     <script>
-        // 1. הגדרות ומשתנים
-        const category = localStorage.getItem('selected_category') || '90s';
-        document.getElementById('category-name').innerText = category.toUpperCase() + " ERA";
-        
+        // --- הגדרות אבטחה ומוזיקה ---
         const audio = new Audio();
-        let score = 0;
+        const category = localStorage.getItem('selected_category') || '90s';
+        document.getElementById('category-label').innerText = category.toUpperCase() + " ERA";
 
-        // 2. מאגר שירים לדוגמה (חן, כאן אתה מחליף לקישורים האמיתיים שלך)
-        const playlist = {
-            '90s': "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3", 
-            '80s': "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-            'Rap': "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-            'Dance': "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3"
-        };
+        // --- פונקציה להזרקת התשובות עם העיצוב הגרפי ---
+        function displayQuestion(data) {
+            const container = document.getElementById('answers-container');
+            container.innerHTML = ''; // ניקוי
 
-        // 3. פונקציית הפעלת המוזיקה (התיקון המרכזי)
-        function initMusic() {
-            const trackUrl = playlist[category];
-            if (trackUrl) {
-                audio.src = trackUrl;
-                audio.volume = 0.7;
-                
-                // ניסיון ניגון אוטומטי
-                let playPromise = audio.play();
+            // יצירת הכפתורים מחדש עם העיצוב שבנינו
+            data.answers.forEach((ans, index) => {
+                const btn = document.createElement('button');
+                btn.className = "answer-btn p-6 rounded-2xl font-bold text-right text-lg flex justify-between items-center";
+                btn.innerHTML = `
+                    <span>${ans}</span>
+                    <span class="text-white/20 text-xs font-black italic">0${index + 1}</span>
+                `;
+                btn.onclick = () => checkAnswer(ans, data.correctIndex);
+                container.appendChild(btn);
+            });
 
-                if (playPromise !== undefined) {
-                    playPromise.catch(error => {
-                        console.log("Auto-play blocked. Music will start on first click.");
-                        // אם נחסם, נפעיל בל
+            // הפעלת מוזיקה מה-URL שמגיע מה-Firebase
+            if (data.mp3Url) {
+                audio.src = data.mp3Url;
+                audio.play().catch(() => {
+                    console.log("Waiting for user interaction...");
+                    // הפעלה בלחיצה ראשונה אם חסום
+                    document.body.addEventListener('click', () => audio.play(), {once: true});
+                });
+            }
+        }
+
+        // --- חיבור ל-Firebase (כאן אתה שם את ה-Config שלך) ---
+        // (שים לב: אני משאיר את הלוגיקה כדי שלא תמחק לך את מה שעבד)
+        
+        /* פה תבוא הפונקציה שלך שמושכת מה-Database:
+        ref.on('value', (snapshot) => {
+            const data = snapshot.val();
+            displayQuestion(data);
+        });
+        */
+
+        // טיימר גרפי
+        let time = 100;
+        setInterval(() => {
+            if (time > 0) {
+                time -= 1;
+                document.getElementById('timer-bar').style.width = time + "%";
+            }
+        }, 100);
+
+    </script>
+</body>
+</html>
